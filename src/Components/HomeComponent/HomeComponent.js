@@ -9,23 +9,44 @@ import {
     NavbarBrand,
     Nav,
     NavItem,
-    NavLink,
-    UncontrolledDropdown,
-    DropdownToggle,
-    DropdownMenu,
-    DropdownItem } from 'reactstrap';
-import SearchField from "react-search-field";
+    NavLink} from 'reactstrap';
 import logo from "./../../assets/Images/logo-YTS.svg";
-import background from "./../../assets/Images/background2.png";
-export default class Home extends Component {
+import Movie from "./../MovieComponent/MovieComponent";
+import Registration from "../RegistrationComponent/Registration";
+import { connect } from "react-redux";
+import { getPopularMovies, getLatestMovies, getSimilarMovies, getSelectedMovie } from "../../Redux/ActionCreators";
+import HomePage from "../HomePageComponent/HomePageComponent"
+import MovieDetails from "../MovieDetails/MovieDetails";
+import {  Route,withRouter, Switch } from "react-router-dom";
+
+const mapStateToProps = (state) => ({
+    movies: state.movies.popularMovies,
+    lastestMovies: state.movies.latestMovies,
+    selectedMovie: state.movies.selectedMovie,
+    similarMovies: state.movies.similarMovies
+})
+
+const mapDispatchToProps = (disptach) => ({
+    fetchPopularMovies :  () => {disptach(getPopularMovies())},
+    fetchLatestMovies:    () => {disptach(getLatestMovies())},
+    fetchMovie:           (id,history) => {disptach(getSelectedMovie(id,history))},
+    fetchSuggestedMovies: (id) => {disptach(getSimilarMovies(id))}
+});
+class Home extends Component {
 
     constructor(props) {
         super(props);
 
         this.toggle = this.toggle.bind(this);
         this.state = {
-            isOpen: false
+            isOpen: false,
+            isModalOpen: false
         };
+    }
+
+    componentDidMount(){
+        this.props.fetchPopularMovies();
+        this.props.fetchLatestMovies();
     }
 
     
@@ -35,14 +56,53 @@ export default class Home extends Component {
     });
     }
 
-    onSearchInputChange = () => {
-
+    toggleModal =() =>{
+        this.setState({
+            ...this.state,
+            isModalOpen:!this.state.isModalOpen
+        })
     }
 
+    onMovieClick =(id) => {
+        this.props.fetchMovie(id,this.props.history);
+        this.props.fetchSuggestedMovies(id);
+    }
+
+    
 
   render() {
+    let popularMovies = [];
+    let latestMoviesViews = [];
+    let groupedLatestMoviesViews =[];
+      if(this.props.movies.length!= 0){
+           popularMovies = this.props.movies.map((movie, i) =>(
+            <Col md={3} sm={6} xs={12} key={i}>
+                <Movie onClick={()=>this.onMovieClick(movie.id)}  name={movie.title_english} year={movie.year} img={movie.medium_cover_image} rate={movie.rating} genre1={movie.genres[0]} genre2={movie.genres[1]}/>
+            </Col>
+          ))
+      }
+
+      
+      if(this.props.lastestMovies.length != 0){
+        latestMoviesViews = this.props.lastestMovies.map((movie,i) =>(
+            <Col md={3} sm={6} xs={12}>
+                <Movie onClick={()=>this.onMovieClick(movie.id)}  name={movie.title_english} year={movie.year} img={movie.medium_cover_image} rate={movie.rating} genre1={movie.genres[0]} genre2={movie.genres[1]}/>
+            </Col>
+          ));
+      }
+      let itemsIndex = 0;
+      for(var i=0;i<latestMoviesViews.length;i++){
+        groupedLatestMoviesViews[i] = <Row className="mt-5" key={i}>
+            {latestMoviesViews[itemsIndex]}
+            {latestMoviesViews[itemsIndex+1]}
+            {latestMoviesViews[itemsIndex+2]}
+            {latestMoviesViews[itemsIndex+3]}
+        </Row>
+        itemsIndex = itemsIndex + 4;
+      }
     return (
         <div>
+            <Registration ModalOpen={this.state.isModalOpen} modalToggle={this.toggleModal}/>
             <Navbar color="dark" dark expand="md">
                 <NavbarBrand href="/" className="mr-auto  ml-4">
                     <img src={logo} alt="Logo"/> 
@@ -50,13 +110,6 @@ export default class Home extends Component {
                 <NavbarToggler onClick={this.toggle} />
                 <Collapse isOpen={this.state.isOpen} navbar> 
                     <Nav className="ml-auto" navbar>
-                        <NavItem className="mr-3">
-                            <SearchField
-                                placeholder="Search..."
-                                onChange={this.onSearchInputChange}
-                                searchText="Quick search.."
-                                classNames="Search"/>
-                        </NavItem>
                         <NavItem>
                             <NavLink href="/">Home</NavLink>
                         </NavItem>
@@ -64,44 +117,23 @@ export default class Home extends Component {
                             <NavLink href="/">Browse Movies</NavLink>
                         </NavItem>
                         <NavItem className="ml-5">
-                            <button type="button" class="btn btn-outline-light">Login</button>
+                            <button type="button" class="btn btn-outline-light" onClick={this.toggleModal}>Login</button>
                         </NavItem>
                         <NavItem className="ml-2">
-                            <button type="button" class="btn btn-outline-light">Register</button>
+                            <button type="button" class="btn btn-outline-light" onClick={this.toggleModal}>Register</button>
                         </NavItem>
                     </Nav>
                 </Collapse>
             </Navbar>
-            <div  style={{backgroundImage: `url(${background}`, 
-                        backgroundSize: "cover",
-                        backgroundPosition:"center center",
-                        backgroundRepeat:"no-repeat",
-                        width:"98.5vw",
-                        height:"98.5vh",
-                        opacity:"0.3"
-                        }}>
-                <div style={{
-                    background: "-moz-linear-gradient(45deg, rgba(220,220,220, 0.7), rgba(105,105,105, 0.7) 100%)",
-                    background: "-webkit-linear-gradient(45deg, rgba(220,220,220, 0.7), rgba(105,105,105, 0.7) 100%)",
-                    background: "-webkit-gradient(linear, 45deg, from(rgba(220,220,220, 0.7)), to(rgba(105,105,105, 0.7)))",
-                    background: "-o-linear-gradient(45deg, rgba(220,220,220, 0.7), rgba(105,105,105, 0.7) 100%)",
-                    background: "linear-gradient(45deg, rgba(220,220,220, 0.7), rgba(105,105,105, 0.7) 100%)",
-                    width:"98.5vw",
-                    height:"98.5vh",
-                }}>
-                
-                </div>
-            </div>
-        </div>
             
+            <Route path="/movie" component={()=> < MovieDetails movie={this.props.selectedMovie} similars = {this.props.similarMovies} />} />
+            <Route exact path="/" component={()=> < HomePage groupedLatestMoviesViews={groupedLatestMoviesViews} popularMovies={popularMovies} />}/>
+            
+            
+            
+        </div>
     )
   }
 }
 
-
-const backgroundImageSytle = {
-    backgroundImage: "url(process.env.PUBLIC_URL + /Assets/Images/background.png)",
-    backgroundRepeat: "no-repeat",
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-}
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(Home));
